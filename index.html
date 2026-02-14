@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שינון צמחי מרפא - שנה ב'</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #f8fafc;
+        }
+        .plant-tag {
+            animation: popIn 0.3s cubic-bezier(0.26, 0.53, 0.74, 1.48) forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 text-center">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">שינון צמחי מרפא 🌿</h1>
+            <p class="text-slate-500">שינון קטגוריות שנה ב'</p>
+        </div>
+
+        <!-- Selection Screen -->
+        <div id="selection-screen" class="fade-in bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">בחרי קטגוריה לתרגול:</h2>
+            <div id="category-menu" class="grid grid-cols-1 gap-4">
+                <!-- Buttons will be injected here -->
+            </div>
+        </div>
+
+        <!-- Game Card -->
+        <div id="game-card" class="hidden fade-in bg-white rounded-3xl shadow-xl border border-slate-100 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="showMenu()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div id="category-name-badge" class="px-4 py-2 rounded-full font-bold text-lg text-center mx-2 transition-colors duration-500">
+                    טוען...
+                </div>
+                <div id="progress-text" class="text-slate-400 font-medium">0 / 0</div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-3 rounded-full mb-8 overflow-hidden">
+                <div id="progress-bar" class="h-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="mb-8">
+                <label for="plant-input" class="block text-right text-slate-600 mb-2 mr-2 text-sm font-medium">הקלידי שם צמח (עברית או לטינית):</label>
+                <input type="text" id="plant-input" 
+                    class="w-full p-4 text-xl border-2 border-slate-200 rounded-2xl outline-none transition-all text-center focus:ring-4"
+                    placeholder="הקלידי כאן..."
+                    autocomplete="off">
+            </div>
+
+            <!-- Found Items -->
+            <div class="text-right">
+                <h3 class="text-slate-400 text-sm font-bold mb-3 uppercase tracking-wider mr-2">צמחים שנמצאו:</h3>
+                <div id="found-container" class="flex flex-wrap gap-2 min-h-[100px] p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <!-- Tags will appear here -->
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="mt-10 flex flex-col items-center gap-4">
+                <button id="next-btn" disabled 
+                    class="w-full px-8 py-4 text-white rounded-2xl font-bold text-lg shadow-lg disabled:bg-slate-300 disabled:shadow-none transition-all flex justify-center items-center gap-2">
+                    <span>הגרל קטגוריה הבאה 🎲</span>
+                    <!-- Removed rotate-180 to flip direction -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button id="skip-btn" onclick="skipLevel()" class="text-slate-400 hover:text-slate-600 font-medium transition-colors text-sm">דלג על קטגוריה זו ⏮️</button>
+                <button onclick="showMenu()" class="text-slate-400 hover:text-slate-600 font-medium transition-colors">חזרה לתפריט הראשי</button>
+            </div>
+        </div>
+
+        <div id="win-screen" class="hidden fade-in text-center p-12 bg-white rounded-3xl shadow-xl">
+            <div class="text-6xl mb-6">🏆</div>
+            <h2 class="text-3xl font-bold text-slate-800 mb-4">אלופה!</h2>
+            <p class="text-slate-600 mb-8 text-lg">סיימת את כל הקטגוריות של שנה ב' בהצלחה.</p>
+            <button onclick="location.reload()" class="px-8 py-4 bg-slate-800 text-white rounded-2xl font-bold">התחל מההתחלה</button>
+        </div>
+    </div>
+
+    <script>
+        const gameData = [
+            {
+                name: "צמחי מרפא אדפטוגנים",
+                color: "emerald",
+                plants: [
+                    { heb: "אסטרגלוס", lat: "Astragalus membranaceus" },
+                    { heb: "אספרגוס", lat: "Asparagus racemosus" },
+                    { heb: "בקופה", lat: "Bacopa monnieri" },
+                    { heb: "בופלאורום", lat: "Bupleurum spp." },
+                    { heb: "סנטלה", lat: "Centella asiatica" },
+                    { heb: "קורדיספס", lat: "Cordyceps sinensis" },
+                    { heb: "ג׳ינסנג סיבירי", lat: "Eleutherococcus senticosus" },
+                    { heb: "ריישי", lat: "Ganoderma lucidum" },
+                    { heb: "ליקוריץ", lat: "Glycyrrhiza glabra" },
+                    { heb: "מאקה", lat: "Lepidium meyenii" },
+                    { heb: "טולסי", lat: "Ocimum tenuiflorum" },
+                    { heb: "ג׳ינסנג קוריאני", lat: "Panax ginseng" },
+                    { heb: "ג׳ינסנג אמריקאי", lat: "Panax quinquefolius" },
+                    { heb: "רודיולה", lat: "Rhodiola rosea" },
+                    { heb: "רהמניה", lat: "Rehmannia glutinosa" },
+                    { heb: "שכיסנדרה", lat: "Schisandra chinensis" },
+                    { heb: "ויתניה", lat: "Withania somnifera" }
+                ]
+            },
+            {
+                name: "מחזקי מערכת עצבים",
+                color: "blue",
+                plants: [
+                    { heb: "שיבולת שועל", lat: "Avena sativa" },
+                    { heb: "בקופה", lat: "Bacopa monnieri" },
+                    { heb: "סנטלה", lat: "Centella asiatica" },
+                    { heb: "ג׳ינסנג סיבירי", lat: "Eleutherococcus senticosus" },
+                    { heb: "ריישי", lat: "Ganoderma lucidum" },
+                    { heb: "היפריקום", lat: "Hypericum perforatum" },
+                    { heb: "ורבנה", lat: "Verbena officinalis" },
+                    { heb: "סקוטלריה", lat: "Scutellaria lateriflora" },
+                    { heb: "רוזמרין", lat: "Rosmarinus officinalis" }
+                ]
+            },
+            {
+                name: "צמחים ממריצים",
+                color: "orange",
+                plants: [
+                    { heb: "גלנג / אלפיניה", lat: "Alpinia galanga" },
+                    { heb: "צילי חריף", lat: "Capsicum minimum" },
+                    { heb: "קינמון", lat: "Cinnamomum spp." },
+                    { heb: "גינסנג קוריאני", lat: "Panax ginseng" },
+                    { heb: "פלפל ארוך / פלפל שחור", lat: "Piper spp." },
+                    { heb: "דמיאנה", lat: "Turnera diffusa" },
+                    { heb: "זנגביל / גינגר", lat: "Zingiber officinalis" },
+                    { heb: "רוזמרין", lat: "Rosmarinus officinalis" },
+                    { heb: "קפה", lat: "Coffea spp." },
+                    { heb: "תה ירוק", lat: "Camellia sinensis" },
+                    { heb: "אגוז קולה", lat: "Cola vera" },
+                    { heb: "גוארנה", lat: "Paullinia cupana" }
+                ]
+            },
+            {
+                name: "מורידי לחץ דם",
+                color: "rose",
+                plants: [
+                    { heb: "עוזרר", lat: "Crataegus spp." },
+                    { heb: "ריישי", lat: "Ganoderma lucidum" },
+                    { heb: "כף הזאב", lat: "Lycopus spp." },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "מרווה אדומה / סינית", lat: "Salvia miltiorrhiza" },
+                    { heb: "קערורית אירופאית / אמריקאית / סקוטלריה", lat: "Scutellaria lateriflora" },
+                    { heb: "תרזה / טיליה", lat: "Tilia spp." },
+                    { heb: "ולריאן", lat: "Valeriana spp." },
+                    { heb: "מורן", lat: "Viburnum spp." },
+                    { heb: "זנב הארי", lat: "Leonurus spp." },
+                    { heb: "דבקון לבן", lat: "Viscum album" },
+                    { heb: "קורידליס", lat: "Corydalis yanhusuo" }
+                ]
+            },
+            {
+                name: "חיזוק הלב (Cardiotonic)",
+                color: "red",
+                plants: [
+                    { heb: "גינסנג סיבירי", lat: "Eleutherococcus senticosus" },
+                    { heb: "מרווה אדומה", lat: "Salvia miltiorrhiza" },
+                    { heb: "גינסנג אמריקאי", lat: "Panax quinquefolius" },
+                    { heb: "עוזרר", lat: "Crataegus spp." },
+                    { heb: "דיגיטליס", lat: "Digitalis purpurea" },
+                    { heb: "זנב הארי", lat: "Leonurus spp." },
+                    { heb: "ריישי / גנודרמה", lat: "Ganoderma lucidum" }
+                ]
+            },
+            {
+                name: "זרימת דם בעורקים כליליים",
+                color: "amber",
+                plants: [
+                    { heb: "עוזרר", lat: "Crataegus spp." },
+                    { heb: "פלפל צילי", lat: "Capsicum spp." },
+                    { heb: "כורכום", lat: "Curcuma longa" },
+                    { heb: "עלי זית", lat: "Olea europea" },
+                    { heb: "מרווה אדומה", lat: "Salvia miltiorrhiza" },
+                    { heb: "זנגביל / ג'ינג'ר", lat: "Zingiber officinalis" }
+                ]
+            },
+            {
+                name: "צמחים המכילים קפאין",
+                color: "violet",
+                plants: [
+                    { heb: "קפה", lat: "Coffea spp." },
+                    { heb: "תה ירוק", lat: "Camellia sinensis" },
+                    { heb: "אגוז קולה", lat: "Cola vera" },
+                    { heb: "גוארנה", lat: "Paullinia cupana" }
+                ]
+            },
+            {
+                name: "הגברת זרימת דם בוורידים (Venotonics)",
+                color: "cyan",
+                plants: [
+                    { heb: "אכילאה", lat: "Achillea millefolium" },
+                    { heb: "גינקו בילובה", lat: "Ginkgo biloba" },
+                    { heb: "עצבונית החורש", lat: "Ruscus aculeatus" },
+                    { heb: "מרווה סינית / אדומה", lat: "Salvia miltiorrhiza" },
+                    { heb: "זנגביל / ג'ינגר", lat: "Zingiber officinalis" },
+                    { heb: "ערמונית הסוסים", lat: "Aesculus hippocastanum" },
+                    { heb: "אוכמניות כחולות", lat: "Vaccinium myrtillus" }
+                ]
+            },
+            {
+                name: "מגבירי זרימת דם פריפרית (Peripheral Stimulant)",
+                color: "indigo",
+                plants: [
+                    { heb: "שום", lat: "Allium sativum" },
+                    { heb: "אלפיניה / גלנגה", lat: "Alpinia galanga" },
+                    { heb: "אנג'ליקה סינית", lat: "Angelica sinensis" },
+                    { heb: "קינמון", lat: "Cinnamomum spp" },
+                    { heb: "הל / קרדמון)", lat: "Elettaria cardamomum" },
+                    { heb: "רוזמרין רפואי", lat: "Rosmarinus officinalis" },
+                    { heb: "זנטוקסיליום", lat: "Zanthoxylum americanum" },
+                    { heb: "זנגביל / ג'ינג'ר", lat: "Zingiber officinalis" }
+                ]
+            },
+            {
+                name: "מסדירי קצב לב (Chronotropic)",
+                color: "pink",
+                plants: [
+                    { heb: "פרחי עוזרר", lat: "Crataegus spp." },
+                    { heb: "אזוביון / לבנדר", lat: "Lavandula spp." },
+                    { heb: "כף זאב", lat: "Lycopus spp." },
+                    { heb: "מליסה", lat: "Melissa officinalis" },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "קערורית אירופאית / אמריקאית / סקוטלריה", lat: "Scutellaria lateriflora" },
+                    { heb: "תרזה / טיליה", lat: "Tilia spp." },
+                    { heb: "זנב הארי", lat: "Leonurus cardiaca" },
+                    { heb: "דבקון לבן", lat: "Viscum album" },
+                    { heb: "וולריאן", lat: "Valeriana spp." },
+                    { heb: "מרווה אדומה / סינית", lat: "Salvia miltiorrhiza" },
+                ]
+            },
+            {
+                name: "נוגדי חמצון (Antioxidants)",
+                color: "lime",
+                plants: [
+                    { heb: "תה ירוק", lat: "Camellia sinensis" },
+                    { heb: "כורכום", lat: "Curcuma longa" },
+                    { heb: "גינקו בילובה", lat: "Ginkgo biloba" },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "רוזמרין רפואי", lat: "Rosmarinus officinalis" },
+                    { heb: "שכיסנדרה", lat: "Schisandra chinensis" },
+                    { heb: "אוכמניות כחולות", lat: "Vaccinium myrtillus" }
+                ]
+            },
+            {
+                name: "צמחים מרגיעים (Sedative)",
+                color: "teal",
+                plants: [
+                    { heb: "פרחי עוזרר", lat: "Crataegus spp." },
+                    { heb: "כשותית", lat: "Humulus lupulus" },
+                    { heb: "אזוביון / לבנדר", lat: "Lavandula spp." },
+                    { heb: "קמומיל", lat: "Matricaria recutita" },
+                    { heb: "מליסה", lat: "Melissa officinalis" },
+                    { heb: "פסיפלורה", lat: "Passiflora incarnata" },
+                    { heb: "קערורית אירופאית / אמריקאית / סקוטלריה", lat: "Scutellaria lateriflora" },
+                    { heb: "תרזה / טיליה", lat: "Tilia spp." },
+                    { heb: "וולריאן", lat: "Valeriana spp." },
+                    { heb: "בקופה / פשטה שרועה", lat: "Bacopa monnieri" },
+                    { heb: "קופטיס", lat: "Coptis chinensis" },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "ורבנה רפואית", lat: "Verbena officinalis" },
+                    { heb: "זוטה לבנה", lat: "Micromeria fruticosa" },
+                    { heb: "נפית החתולים", lat: "Nepeta spp." },
+                    { heb: "זנב הארי", lat: "Leonurus cardiaca" },
+                    { heb: "מרווה רפואית", lat: "Salvia spp." },
+                    { heb: "כף הזאב", lat: "Lycopus europaeus" },
+                    { heb: "מנטה חריפה", lat: "Mentha piperita" }
+                ]
+            },
+            {
+                name: "צמחים משחררים – מרפים (Relaxant)",
+                color: "gray",
+                plants: [
+                    { heb: "כשותית", lat: "Humulus lupulus" },
+                    { heb: "אזוביון / לבנדר", lat: "Lavandula spp." },
+                    { heb: "כף זאב", lat: "Lycopus spp." },
+                    { heb: "קמומיל", lat: "Matricaria recutita" },
+                    { heb: "מליסה", lat: "Melissa officinalis" },
+                    { heb: "זוטה לבנה", lat: "Micromeria fruticosa" },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "קערורית אירופאית / אמריקאית", lat: "Scutellaria lateriflora" },
+                    { heb: "תרזה / טיליה", lat: "Tilia spp." },
+                    { heb: "וולריאן", lat: "Valeriana spp." },
+                    { heb: "מורן", lat: "Viburnum spp." }
+                ]
+            },
+            {
+                name: "נוגדי קרישה (Anticoagulants)",
+                color: "fuchsia",
+                plants: [
+                    { heb: "אכילאה אלף העלה", lat: "Achillea millefolium" },
+                    { heb: "שום", lat: "Allium sativum" },
+                    { heb: "אנג'ליקה סינית", lat: "Angelica sinensis" },
+                    { heb: "ערמונית הסוסים", lat: "Aesculus hippocastanum" },
+                    { heb: "כורכום", lat: "Curcuma longa" },
+                    { heb: "פטריית ריישי", lat: "Ganoderma lucidum" },
+                    { heb: "גינקו בילובה", lat: "Ginkgo biloba" },
+                    { heb: "מרווה אדומה / סינית", lat: "Salvia miltiorrhiza" },
+                    { heb: "תה ירוק", lat: "Camellia sinensis" },
+                    { heb: "אוכמניות כחולות", lat: "Vaccinium myrtillus" }
+                ]
+            },
+            {
+                name: "בוני דם / מזיני דם (Blood Tonics)",
+                color: "purple",
+                plants: [
+                    { heb: "אנג'ליקה סינית", lat: "Angelica sinensis" },
+                    { heb: "אסטרגלוס", lat: "Astragalus membranaceus" },
+                    { heb: "פאוניה", lat: "Paeonia lactiflora" },
+                    { heb: "רהמניה", lat: "Rehmannia glutinosa" },
+                    { heb: "סרפד", lat: "Urtica dioica" },
+                    { heb: "ויתניה משכרת", lat: "Withania somnifera" },
+                    { heb: "זנגביל / ג'ינג'ר", lat: "Zingiber officinalis" }
+                ]
+            },
+            {
+                name: "צמחים מזינים (Nutritive)",
+                color: "yellow",
+                plants: [
+                    { heb: "מאקה", lat: "Lepidium meyenii" },
+                    { heb: "אספסת", lat: "Medicago sativa" },
+                    { heb: "גרגר הנחלים", lat: "Nasturtium officinale" },
+                    { heb: "רהמניה מבושלת", lat: "Rehmannia glutinosa" },
+                    { heb: "סרפד", lat: "Urtica dioica" }
+                ]
+            },
+            {
+                name: "מפחיתי רמות כולסטרול (Hypocholesterolemic)",
+                color: "slate",
+                plants: [
+                    { heb: "אנג'ליקה סינית", lat: "Angelica sinensis" },
+                    { heb: "כורכום", lat: "Curcuma longa" },
+                    { heb: "ארטישוק", lat: "Cynara spp." },
+                    { heb: "גימנמה", lat: "Gymnema sylvestre" },
+                    { heb: "מלון מר", lat: "Momordica charantia" },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "שכיסנדרה", lat: "Schisandra chinensis" },
+                    { heb: "שן הארי", lat: "Taraxacum officinalis" }
+                ]
+            },
+            {
+                name: "משתנים (Diuretics)",
+                color: "sky",
+                plants: [
+                    { heb: "זרעי סלרי", lat: "Apium graveolens" },
+                    { heb: "שן ארי", lat: "Taraxacum officinalis" },
+                    { heb: "תרזה / טיליה", lat: "Tilia spp." },
+                    { heb: "סרפד", lat: "Urtica dioica" },
+                    { heb: "זקן תירס", lat: "Zea mays" }
+                ]
+            },
+            {
+                name: "אנטי דיכאוניים/מרוממי מצב רוח (Antidepressant/Thymoleptic)",
+                color: "green",
+                plants: [
+                    { heb: "אנג'ליקה סינית", lat: "Angelica sinensis" },
+                    { heb: "אזוביון / לוונדר", lat: "Lavandula spp." },
+                    { heb: "בקופה / פשטה שרועה", lat: "Bacopa monnieri" },
+                    { heb: "דמיאנה", lat: "Turnera diffusa" },
+                    { heb: "דקל ננסי", lat: "Serenoa serrulata" },
+                    { heb: "היפריקום / פרע מחורר", lat: "Hypericum perforatum" },
+                    { heb: "ויתניה משכרת", lat: "Withania somnifera" },
+                    { heb: "ורבנה רפואית", lat: "Verbena officinalis" },
+                    { heb: "זנב הארי", lat: "Leonurus cardiaca" },
+                    { heb: "שכיסנדרה", lat: "Schisandra chinensis" },
+                    { heb: "סנטלה / גוטוקולה", lat: "Hydrocotyle asiatica" },
+                    { heb: "עוזרר (פירות ופרחים)", lat: "Crataegus spp." },
+                    { heb: "ג'ינסנג קוריאני", lat: "Panax ginseng" },
+                    { heb: "ריחן קדוש / טולסי", lat: "Ocimum tenuiflorum" },
+                    { heb: "רודיולה", lat: "Rhodiola rosea" },
+                    { heb: "רוזמרין", lat: "Rosmarinus officinalis" },
+                    { heb: "ג'ינסנג סיבירי", lat: "Eleutherococcus senticosus" }
+                ]
+            },
+            {
+                name: "מכייחים ספונינים (Saponin Expectorants)",
+                color: "stone",
+                plants: [
+                    { heb: "בכור אביב", lat: "Primula veris" },
+                    { heb: "בקופה / פשטה שרועה", lat: "Bacopa monnieri" },
+                    { heb: "בורית", lat: "Saponaria officinalis" },
+                    { heb: "לובליה", lat: "Lobelia inflata" },
+                    { heb: "שוש קירח / ליקוריץ", lat: "Glycyrrhiza glabra" }
+                ]
+            },
+            {
+                name: "מכייחים ארומתיים (Aromatic Expectorants)",
+                color: "zinc",
+                plants: [
+                    { heb: "אזוב בן רפואי", lat: "Hyssopus officinalis" },
+                    { heb: "אזוב מצוי / זעתר", lat: "Majorana (Origanum) syriaca" },
+                    { heb: "אורגנו", lat: "Origanum vulgare" },
+                    { heb: "אמיתה קיצית", lat: "Ammi visnaga" },
+                    { heb: "אניס (זרעי)", lat: "Pimpinella anisum" },
+                    { heb: "הל (קרדמון)", lat: "Elletaria cardamomum" },
+                    { heb: "זרעי שומר", lat: "Foeniculum vulgare" },
+                    { heb: "טיון השמש", lat: "Inula helenium" },
+                    { heb: "מרוביון מצוי", lat: "Marrubium vulgare" },
+                    { heb: "מרווה משולשת / מרווה רפואית", lat: "Salvia fruticosa / officinalis" },
+                    { heb: "צתרה ורודה", lat: "Satureja thymbra" },
+                    { heb: "קורנית בת / טימין", lat: "Thymus vulgaris" },
+                    { heb: "קורנית מקורקפת", lat: "Coridothymus capitatus" },
+                    { heb: "קצח (זרעי)", lat: "Nigella sativa" },
+                    { heb: "רוזמרין", lat: "Rosmarinus officinalis" }
+                ]
+            },
+            {
+                name: "מרככים למערכת הנשימה (Demulcent)",
+                color: "blue",
+                plants: [
+                    { heb: "אלתיאה", lat: "Althea officinalis" },
+                    { heb: "חזזית איסלנדית", lat: "Cetraria islandica" },
+                    { heb: "דרוסרה", lat: "Drosera rotundifolia" },
+                    { heb: "שוש קירח / ליקוריץ", lat: "Glycyrrhiza glabra" },
+                    { heb: "פלנטגו / לחך", lat: "Plantago spp." },
+                    { heb: "בוצין", lat: "Verbascum spp." }
+                ]
+            },
+            {
+                name: "אנטי דכאוני (Antidepressant)",
+                color: "green",
+                plants: [
+                    { heb: "אזוביון / לוונדר", lat: "Lavandula spp." },
+                    { heb: "בקופה / פשטה שרועה", lat: "Bacopa monnieri" },
+                    { heb: "דמיאנה", lat: "Turnera diffusa" },
+                    { heb: "היפריקום / פרע מחורר", lat: "Hypericum perforatum" },
+                    { heb: "ורבנה רפואית", lat: "Verbena officinalis" },
+                    { heb: "שכיסנדרה", lat: "Schisandra chinensis" },
+                    { heb: "גינסנג קוריאני", lat: "Panax ginseng" },
+                    { heb: "רודיולה", lat: "Rhodiola rosea" },
+                    { heb: "גינסנג סיבירי", lat: "Eleutherococcus senticosus" }
+                ]
+            },
+            {
+                name: "מרוממי מצב רוח (Thymoleptic)",
+                color: "amber",
+                plants: [
+                    { heb: "ויתניה משכרת", lat: "Withania somnifera" },
+                    { heb: "ורבנה רפואית", lat: "Verbena officinalis" },
+                    { heb: "זנב הארי", lat: "Leonurus cardiaca" },
+                    { heb: "שכיסנדרה", lat: "Schisandra chinensis" },
+                    { heb: "סנטלה / גוטוקולה", lat: "Hydrocotyle asiatica" },
+                    { heb: "עוזרר (פירות ופרחים)", lat: "Crataegus spp." },
+                    { heb: "רוזמרין", lat: "Rosmarinus officinalis" }
+                ]
+            },
+            {
+                name: "אנטי אלרגיים (Anti-Allergy)",
+                color: "indigo",
+                plants: [
+                    { heb: "אסטרגלוס", lat: "Astragalus membranaceus" },
+                    { heb: "גינקו בילובה", lat: "Ginkgo biloba" },
+                    { heb: "שוש קירח / ליקוריץ", lat: "Glycyrrhiza glabra" },
+                    { heb: "בן חרצית", lat: "Tanacetum parthenium" },
+                    { heb: "שכיזנדרה סינית", lat: "Schisandra chinensis" }
+                ]
+            },
+            {
+                name: "צמחים שוברי ליחה (Anti-catarrhal)",
+                color: "teal",
+                plants: [
+                    { heb: "אכילאה", lat: "Achillea millefolium" },
+                    { heb: "קורנית מקורקפת", lat: "Coridothymus capitatus" },
+                    { heb: "יופריזה", lat: "Euphrasia officinalis" },
+                    { heb: "אזוב בן רפואי", lat: "Hyssopus officinalis" },
+                    { heb: "צתרה ורודה", lat: "Satureja thymbra" },
+                    { heb: "פרחי סמבוק", lat: "Sambucus nigra" }
+                ]
+            },
+            {
+                name: "מחטאים למערכת הנשימה (Antiseptic Respiratory)",
+                color: "cyan",
+                plants: [
+                    { heb: "אכינצאה", lat: "Echinacea spp." },
+                    { heb: "בצל", lat: "Allium cepa" },
+                    { heb: "חותם הזהב", lat: "Hydrastis canadensis" },
+                    { heb: "עלי זית", lat: "Olea europaea" },
+                    { heb: "שום", lat: "Allium sativum" },
+                    { heb: "שוש קירח / ליקוריץ", lat: "Glycyrrhiza glabra" }
+                ]
+            },
+            {
+                name: "אנטי עוויתיים למערכת הנשימה (Respiratory Anti-spasmodic)",
+                color: "violet",
+                plants: [
+                    { heb: "אזוב בן רפואי", lat: "Hyssopus officinalis" },
+                    { heb: "זוטה לבנה", lat: "Micromeria fruticosa" },
+                    { heb: "וולריאן", lat: "Valeriana spp." },
+                    { heb: "זרעי שומר", lat: "Foeniculum vulgare" },
+                    { heb: "טיון השמש", lat: "Inula helenium" },
+                    { heb: "טימין / קורנית בת", lat: "Thymus vulgaris" },
+                    { heb: "מורן", lat: "Viburnum spp." },
+                    { heb: "מרווה משולשת", lat: "Salvia fruticosa" },
+                    { heb: "קערורית אירופאית / אמריקאית", lat: "Scutellaria lateriflora" },
+                    { heb: "קמומיל", lat: "Matricaria recutita" },
+                    { heb: "שוש קירח / ליקוריץ", lat: "Glycyrrhiza glabra" },
+                    { heb: "תרזה / טיליה", lat: "Tilia spp." }
+                ]
+            }
+        ];
+
+        let currentLevel = 0;
+        let foundIndices = new Set();
+        let completedCategories = new Set(); // To track completed categories
+
+        const inputEl = document.getElementById('plant-input');
+        const foundContainer = document.getElementById('found-container');
+        const nextBtn = document.getElementById('next-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        const progressFill = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const categoryBadge = document.getElementById('category-name-badge');
+        
+        const selectionScreen = document.getElementById('selection-screen');
+        const gameCard = document.getElementById('game-card');
+        const winScreen = document.getElementById('win-screen');
+        const categoryMenu = document.getElementById('category-menu');
+
+        // Color Mapping for Tailwind Classes
+        const colorMap = {
+            emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700', bar: 'bg-emerald-500', btn: 'bg-emerald-600', btnHover: 'hover:bg-emerald-700', ring: 'focus:ring-emerald-500/10', border: 'focus:border-emerald-500', tag: 'bg-emerald-500', menuBg: 'hover:bg-emerald-50', menuBorder: 'hover:border-emerald-200', menuText: 'hover:text-emerald-700' },
+            blue: { bg: 'bg-blue-100', text: 'text-blue-700', bar: 'bg-blue-500', btn: 'bg-blue-600', btnHover: 'hover:bg-blue-700', ring: 'focus:ring-blue-500/10', border: 'focus:border-blue-500', tag: 'bg-blue-500', menuBg: 'hover:bg-blue-50', menuBorder: 'hover:border-blue-200', menuText: 'hover:text-blue-700' },
+            orange: { bg: 'bg-orange-100', text: 'text-orange-700', bar: 'bg-orange-500', btn: 'bg-orange-600', btnHover: 'hover:bg-orange-700', ring: 'focus:ring-orange-500/10', border: 'focus:border-orange-500', tag: 'bg-orange-500', menuBg: 'hover:bg-orange-50', menuBorder: 'hover:border-orange-200', menuText: 'hover:text-orange-700' },
+            rose: { bg: 'bg-rose-100', text: 'text-rose-700', bar: 'bg-rose-500', btn: 'bg-rose-600', btnHover: 'hover:bg-rose-700', ring: 'focus:ring-rose-500/10', border: 'focus:border-rose-500', tag: 'bg-rose-500', menuBg: 'hover:bg-rose-50', menuBorder: 'hover:border-rose-200', menuText: 'hover:text-rose-700' },
+            red: { bg: 'bg-red-100', text: 'text-red-700', bar: 'bg-red-500', btn: 'bg-red-600', btnHover: 'hover:bg-red-700', ring: 'focus:ring-red-500/10', border: 'focus:border-red-500', tag: 'bg-red-500', menuBg: 'hover:bg-red-50', menuBorder: 'hover:border-red-200', menuText: 'hover:text-red-700' },
+            amber: { bg: 'bg-amber-100', text: 'text-amber-700', bar: 'bg-amber-500', btn: 'bg-amber-600', btnHover: 'hover:bg-amber-700', ring: 'focus:ring-amber-500/10', border: 'focus:border-amber-500', tag: 'bg-amber-500', menuBg: 'hover:bg-amber-50', menuBorder: 'hover:border-amber-200', menuText: 'hover:text-amber-700' },
+            violet: { bg: 'bg-violet-100', text: 'text-violet-700', bar: 'bg-violet-500', btn: 'bg-violet-600', btnHover: 'hover:bg-violet-700', ring: 'focus:ring-violet-500/10', border: 'focus:border-violet-500', tag: 'bg-violet-500', menuBg: 'hover:bg-violet-50', menuBorder: 'hover:border-violet-200', menuText: 'hover:text-violet-700' },
+            cyan: { bg: 'bg-cyan-100', text: 'text-cyan-700', bar: 'bg-cyan-500', btn: 'bg-cyan-600', btnHover: 'hover:bg-cyan-700', ring: 'focus:ring-cyan-500/10', border: 'focus:border-cyan-500', tag: 'bg-cyan-500', menuBg: 'hover:bg-cyan-50', menuBorder: 'hover:border-cyan-200', menuText: 'hover:text-cyan-700' },
+            indigo: { bg: 'bg-indigo-100', text: 'text-indigo-700', bar: 'bg-indigo-500', btn: 'bg-indigo-600', btnHover: 'hover:bg-indigo-700', ring: 'focus:ring-indigo-500/10', border: 'focus:border-indigo-500', tag: 'bg-indigo-500', menuBg: 'hover:bg-indigo-50', menuBorder: 'hover:border-indigo-200', menuText: 'hover:text-indigo-700' },
+            pink: { bg: 'bg-pink-100', text: 'text-pink-700', bar: 'bg-pink-500', btn: 'bg-pink-600', btnHover: 'hover:bg-pink-700', ring: 'focus:ring-pink-500/10', border: 'focus:border-pink-500', tag: 'bg-pink-500', menuBg: 'hover:bg-pink-50', menuBorder: 'hover:border-pink-200', menuText: 'hover:text-pink-700' },
+            lime: { bg: 'bg-lime-100', text: 'text-lime-700', bar: 'bg-lime-500', btn: 'bg-lime-600', btnHover: 'hover:bg-lime-700', ring: 'focus:ring-lime-500/10', border: 'focus:border-lime-500', tag: 'bg-lime-500', menuBg: 'hover:bg-lime-50', menuBorder: 'hover:border-lime-200', menuText: 'hover:text-lime-700' },
+            teal: { bg: 'bg-teal-100', text: 'text-teal-700', bar: 'bg-teal-500', btn: 'bg-teal-600', btnHover: 'hover:bg-teal-700', ring: 'focus:ring-teal-500/10', border: 'focus:border-teal-500', tag: 'bg-teal-500', menuBg: 'hover:bg-teal-50', menuBorder: 'hover:border-teal-200', menuText: 'hover:text-teal-700' },
+            gray: { bg: 'bg-gray-100', text: 'text-gray-700', bar: 'bg-gray-500', btn: 'bg-gray-600', btnHover: 'hover:bg-gray-700', ring: 'focus:ring-gray-500/10', border: 'focus:border-gray-500', tag: 'bg-gray-500', menuBg: 'hover:bg-gray-50', menuBorder: 'hover:border-gray-200', menuText: 'hover:text-gray-700' },
+            fuchsia: { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', bar: 'bg-fuchsia-500', btn: 'bg-fuchsia-600', btnHover: 'hover:bg-fuchsia-700', ring: 'focus:ring-fuchsia-500/10', border: 'focus:border-fuchsia-500', tag: 'bg-fuchsia-500', menuBg: 'hover:bg-fuchsia-50', menuBorder: 'hover:border-fuchsia-200', menuText: 'hover:text-fuchsia-700' },
+            purple: { bg: 'bg-purple-100', text: 'text-purple-700', bar: 'bg-purple-500', btn: 'bg-purple-600', btnHover: 'hover:bg-purple-700', ring: 'focus:ring-purple-500/10', border: 'focus:border-purple-500', tag: 'bg-purple-500', menuBg: 'hover:bg-purple-50', menuBorder: 'hover:border-purple-200', menuText: 'hover:text-purple-700' },
+            yellow: { bg: 'bg-yellow-100', text: 'text-yellow-800', bar: 'bg-yellow-500', btn: 'bg-yellow-600', btnHover: 'hover:bg-yellow-700', ring: 'focus:ring-yellow-500/10', border: 'focus:border-yellow-500', tag: 'bg-yellow-500', menuBg: 'hover:bg-yellow-50', menuBorder: 'hover:border-yellow-200', menuText: 'hover:text-yellow-800' },
+            slate: { bg: 'bg-slate-200', text: 'text-slate-800', bar: 'bg-slate-600', btn: 'bg-slate-700', btnHover: 'hover:bg-slate-800', ring: 'focus:ring-slate-600/10', border: 'focus:border-slate-600', tag: 'bg-slate-600', menuBg: 'hover:bg-slate-100', menuBorder: 'hover:border-slate-300', menuText: 'hover:text-slate-800' },
+            sky: { bg: 'bg-sky-100', text: 'text-sky-700', bar: 'bg-sky-500', btn: 'bg-sky-600', btnHover: 'hover:bg-sky-700', ring: 'focus:ring-sky-500/10', border: 'focus:border-sky-500', tag: 'bg-sky-500', menuBg: 'hover:bg-sky-50', menuBorder: 'hover:border-sky-200', menuText: 'hover:text-sky-700' },
+            green: { bg: 'bg-green-100', text: 'text-green-700', bar: 'bg-green-500', btn: 'bg-green-600', btnHover: 'hover:bg-green-700', ring: 'focus:ring-green-500/10', border: 'focus:border-green-500', tag: 'bg-green-500', menuBg: 'hover:bg-green-50', menuBorder: 'hover:border-green-200', menuText: 'hover:text-green-700' },
+            stone: { bg: 'bg-stone-100', text: 'text-stone-700', bar: 'bg-stone-500', btn: 'bg-stone-600', btnHover: 'hover:bg-stone-700', ring: 'focus:ring-stone-500/10', border: 'focus:border-stone-500', tag: 'bg-stone-500', menuBg: 'hover:bg-stone-50', menuBorder: 'hover:border-stone-200', menuText: 'hover:text-stone-700' },
+            zinc: { bg: 'bg-zinc-100', text: 'text-zinc-700', bar: 'bg-zinc-500', btn: 'bg-zinc-600', btnHover: 'hover:bg-zinc-700', ring: 'focus:ring-zinc-500/10', border: 'focus:border-zinc-500', tag: 'bg-zinc-500', menuBg: 'hover:bg-zinc-50', menuBorder: 'hover:border-zinc-200', menuText: 'hover:text-zinc-700' }
+        };
+
+        function buildMenu() {
+            categoryMenu.innerHTML = '';
+            gameData.forEach((level, index) => {
+                if (completedCategories.has(index)) return; 
+                
+                const colors = colorMap[level.color];
+                const isDone = completedCategories.has(index);
+                const btn = document.createElement('button');
+                
+                const opacityClass = isDone ? 'opacity-50 cursor-not-allowed' : '';
+                
+                btn.className = `w-full p-4 bg-slate-50 ${colors.menuBg} text-slate-700 ${colors.menuText} border-2 border-slate-100 ${colors.menuBorder} rounded-2xl font-bold transition-all text-right flex justify-between items-center group ${opacityClass}`;
+                btn.innerHTML = `
+                    <span>${level.name} ${isDone ? '✅' : ''}</span>
+                    <span class="bg-slate-200 text-slate-500 text-xs px-2 py-1 rounded-md group-hover:opacity-80 transition-colors">${level.plants.length} צמחים</span>
+                `;
+                
+                if (!isDone) {
+                    btn.onclick = () => startLevel(index);
+                }
+                categoryMenu.appendChild(btn);
+            });
+        }
+
+        function showMenu() {
+            gameCard.classList.add('hidden');
+            winScreen.classList.add('hidden');
+            selectionScreen.classList.remove('hidden');
+            buildMenu();
+        }
+
+        function startLevel(index) {
+            currentLevel = index;
+            selectionScreen.classList.add('hidden');
+            gameCard.classList.remove('hidden');
+            initLevel();
+        }
+
+        function initLevel() {
+            const levelData = gameData[currentLevel];
+            const theme = colorMap[levelData.color];
+
+            foundIndices.clear();
+            foundContainer.innerHTML = '';
+            inputEl.value = '';
+            inputEl.disabled = false;
+            inputEl.placeholder = "הקלידי שם צמח...";
+            
+            // Apply Theme Colors
+            categoryBadge.className = `px-4 py-2 ${theme.bg} ${theme.text} rounded-full font-bold text-lg text-center mx-2 transition-all duration-500`;
+            categoryBadge.innerText = levelData.name;
+            
+            progressFill.className = `h-full ${theme.bar} transition-all duration-500 ease-out`;
+            progressFill.style.width = '0%';
+            
+            inputEl.className = `w-full p-4 text-xl border-2 border-slate-200 rounded-2xl outline-none transition-all text-center focus:ring-4 ${theme.border} ${theme.ring}`;
+            
+            nextBtn.className = `w-full px-8 py-4 ${theme.btn} ${theme.btnHover} text-white rounded-2xl font-bold text-lg shadow-lg disabled:bg-slate-300 disabled:shadow-none transition-all flex justify-center items-center gap-2`;
+            nextBtn.disabled = true;
+            // Updated innerHTML to remove rotate-180 here as well
+            nextBtn.innerHTML = `<span>הגרל קטגוריה הבאה 🎲</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>`;
+            
+            skipBtn.classList.remove('hidden');
+
+            updateUI();
+            setTimeout(() => inputEl.focus(), 100);
+        }
+
+        function updateUI() {
+            const levelPlants = gameData[currentLevel].plants;
+            const foundCount = foundIndices.size;
+            const totalCount = levelPlants.length;
+            
+            progressText.innerText = `${foundCount} / ${totalCount}`;
+            const percentage = (foundCount / totalCount) * 100;
+            progressFill.style.width = percentage + '%';
+
+            if (foundCount === totalCount) {
+                nextBtn.disabled = false;
+                inputEl.disabled = true;
+                inputEl.placeholder = "מעולה! עברת את השלב.";
+                completedCategories.add(currentLevel);
+                skipBtn.classList.add('hidden'); // Hide skip button when completed
+            }
+        }
+
+        function skipLevel() {
+            // Find remaining categories excluding the current one
+            const remainingIndices = gameData.map((_, i) => i).filter(i => !completedCategories.has(i) && i !== currentLevel);
+            
+            if (remainingIndices.length > 0) {
+                // Randomly select from remaining
+                const randomIndex = remainingIndices[Math.floor(Math.random() * remainingIndices.length)];
+                startLevel(randomIndex);
+            } else {
+               // If no more categories to skip to, just go to menu
+               showMenu();
+            }
+        }
+
+        inputEl.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toLowerCase().replace(/[''""`׳״\-]/g, '');
+            if (val.length < 2) return;
+
+            const levelPlants = gameData[currentLevel].plants;
+            levelPlants.forEach((plant, index) => {
+                if (!foundIndices.has(index)) {
+                    const cleanLat = plant.lat.toLowerCase().replace(/[''""`׳״\-]/g, '');
+                    
+                    // Logic Update: Split by / OR ( OR ) to handle optional parts in parentheses
+                    // Then clean each part
+                    const hebParts = plant.heb.split(/[\/\(\)]+/).map(s => 
+                        s.trim().toLowerCase().replace(/[''""`׳״\-]/g, '')
+                    ).filter(s => s.length > 0);
+
+                    // Check if any part matches input OR latin name matches
+                    const isHebrewMatch = hebParts.some(part => part === val);
+                    const isLatinMatch = cleanLat === val;
+
+                    if (isHebrewMatch || isLatinMatch) {
+                        foundIndices.add(index);
+                        createTag(plant);
+                        inputEl.value = '';
+                        updateUI();
+                    }
+                }
+            });
+        });
+
+        function createTag(plant) {
+            const theme = colorMap[gameData[currentLevel].color];
+            const tag = document.createElement('div');
+            tag.className = `plant-tag ${theme.tag} text-white px-3 py-1 rounded-lg text-sm font-bold shadow-sm`;
+            tag.innerText = `✓ ${plant.heb} (${plant.lat})`;
+            foundContainer.appendChild(tag);
+        }
+
+        nextBtn.addEventListener('click', () => {
+            // Find remaining categories
+            const remainingIndices = gameData.map((_, i) => i).filter(i => !completedCategories.has(i));
+            
+            if (remainingIndices.length > 0) {
+                // Randomly select from remaining
+                const randomIndex = remainingIndices[Math.floor(Math.random() * remainingIndices.length)];
+                startLevel(randomIndex);
+            } else {
+                gameCard.classList.add('hidden');
+                winScreen.classList.remove('hidden');
+            }
+        });
+
+        window.onload = buildMenu;
+    </script>
+</body>
+</html>
